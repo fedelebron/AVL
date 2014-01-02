@@ -1,10 +1,11 @@
-{-# LANGUAGE GADTs, DataKinds, ExplicitForAll, StandaloneDeriving, KindSignatures #-}
+{-# LANGUAGE GADTs, ScopedTypeVariables, FlexibleInstances, DataKinds, ExplicitForAll, InstanceSigs, StandaloneDeriving, KindSignatures #-}
 
 data Nat = Zero | Succ Nat deriving (Eq, Ord, Show)
-
+type One = Succ Zero
+type Two = Succ One
 
 data AVLNode :: Nat -> * -> * where
-  Leaf :: a -> AVLNode Zero a
+  Nil :: AVLNode Zero a
   Leftie :: a -> AVLNode (Succ n) a -> AVLNode n a -> AVLNode (Succ (Succ n)) a
   Rightie :: a -> AVLNode n a -> AVLNode (Succ n) a -> AVLNode (Succ (Succ n)) a
   Balanced :: a -> AVLNode n a -> AVLNode n a -> AVLNode (Succ n) a
@@ -63,45 +64,64 @@ zipTo x z@(Zipper (Rightie v l r) ctx) = case compare x v of
 zipTo x z = z
 
 
-singleton :: a -> AVLTree a
-singleton = T . Leaf
+empty :: AVLTree a
+empty = T Nil
 
 insert :: Ord a => a -> AVLTree a -> AVLTree a
 insert x t@(T root) = case zipTo x (unZip root) of
-  Zipper (Leaf y) ctx = insertAt (if Leaf x) ctx
+  Zipper Nil ctx -> insertUnbalancedAt (Balanced x Nil Nil) ctx
   _ -> t
 
-insertAt :: AVLNode n a -> Context m n a -> AVLTree a
-insertAt = undefined
+insertUnbalancedAt :: forall m a n. AVLNode (Succ n) a -> Context m n a -> AVLTree a
+insertUnbalancedAt t (LRC v y ctx) = T . zipUp $ Zipper (Balanced v y t) ctx
+insertUnbalancedAt t (RLC v y ctx) = T . zipUp $ Zipper (Balanced v t y) ctx
+insertUnbalancedAt t Root = T t
 
-search :: (Ord a, Eq a) => forall n. AVLNode n a -> a -> Bool
-search (Leaf y) x = x == y
-search (Leftie z left right) x = case compare x z of
-                                     EQ -> True
-                                     LT -> search left x
-                                     GT -> search right x
+{- LLC -}
+insertUnbalancedAt (Leftie b g p) (LLC a d ctx) = T $ zipUp z
+  where
+    z = Zipper (Balanced b g (Balanced a p d)) ctx
+insertUnbalancedAt (Rightie b g (Rightie p t1 t2)) (LLC a d ctx) = T $ zipUp z
+  where
+    z = Zipper (Balanced p (Leftie b g t1) (Balanced a t2 d)) ctx
+insertUnbalancedAt (Rightie b g (Leftie p t1 t2)) (LLC a d ctx) = T $ zipUp z
+  where
+    z = Zipper (Balanced p (Balanced b g t1) (Rightie a t2 d)) ctx
+insertUnbalancedAt (Rightie b g (Balanced p t1 t2)) (LLC a d ctx) = T $ zipUp z
+  where
+    z = Zipper (Balanced p (Balanced b g t1) (Balanced a t2 d)) ctx
+insertUnbalancedAt (Balanced b g p) (LLC a d ctx) = goUp
+  where
+    goUp = insertUnbalancedAt (Rightie b g (Leftie a p d)) ctx
 
-search (Rightie z left right) x = case compare x z of
-                                     EQ -> True
-                                     LT -> search left x
-                                     GT -> search right x
+{- RRC -}
+insertUnbalancedAt (Rightie b p g) (RRC a d ctx) = T $ zipUp z
+  where
+    z = Zipper (Balanced b g (Balanced a p d)) ctx
+insertUnbalancedAt (Leftie b (Leftie p t1 t2) g) (RRC a d ctx) = T $ zipUp z
+  where
+    z = Zipper (Balanced p (Leftie b g t2) (Balanced a t1 d)) ctx
+insertUnbalancedAt (Leftie b (Rightie p t1 t2) g) (RRC a d ctx) = T $ zipUp z
+  where
+    z = Zipper (Balanced p (Balanced b g t2) (Rightie a t1 d)) ctx
+insertUnbalancedAt (Leftie b (Balanced p t1 t2) g) (RRC a d ctx) = T $ zipUp z
+  where
+    z = Zipper (Balanced p (Balanced b g t2) (Balanced a t1 d)) ctx
+insertUnbalancedAt (Balanced b p g) (RRC a d ctx) = goUp
+  where
+    goUp = insertUnbalancedAt (Leftie b (Rightie a d p) g) ctx
 
-search (Balanced z left right) x = case compare x z of
-                                     EQ -> True
-                                     LT -> search left x
-                                     GT -> search right x
+{- BC -}
+insertUnbalancedAt (Leftie b g p) (BC True a d ctx) = goUp
+  where
+    goUp = insertUnbalancedAt (Rightie b g (Rightie a p d)) ctx
+insertUnbalancedAt (Rightie b g p) (BC False a d ctx) = goUp
+  where
+    goUp = insertUnbalancedAt (Leftie b (Leftie a d g) p) ctx
+insertUnbalancedAt t (BC False a d ctx) = insertUnbalancedAt (Rightie a d t) ctx
+insertUnbalancedAt t (BC True a d ctx) = insertUnbalancedAt (Leftie a t d) ctx
 
-data Node a = forall n. Node (AVLNode n a)
 
-left :: AVLNode (Succ n) a -> Node a
-left (Leftie _ l r) = Node l
-left (Rightie _ l r) = Node l
-left (Balanced _ l r) = Node l
-
-right :: AVLNode (Succ n) a -> Node a
-right (Leftie _ l r) = Node r
-right (Rightie _ l r) = Node r
-right (Balanced _ l r) = Node r
 
 main :: IO ()
 main = return ()
