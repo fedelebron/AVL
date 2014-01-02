@@ -80,17 +80,13 @@ canGoUp (Zipper _ Root) = False
 canGoUp _ = True
 
 left :: Zipper m a -> Zipper m a
-left z@(Zipper (Balanced _ Nil _) ctx) = z
 left (Zipper (Balanced x l r) ctx) = Zipper l (BC True x r ctx)
 left (Zipper (Leftie x l r) ctx) = Zipper l (LLC x r ctx)
-left z@(Zipper (Rightie _ Nil _) ctx) = z
 left (Zipper (Rightie x l r) ctx) = Zipper l (RLC x r ctx)
 -- TODO: Should I error out on Nil?
 left z = z
 
 right :: Zipper m a -> Zipper m a
-right z@(Zipper (Balanced _ _ Nil) ctx) = z
-right z@(Zipper (Leftie _ _ Nil) ctx) = z
 right (Zipper (Rightie x l r) ctx) = Zipper r (RRC x l ctx)
 right (Zipper (Leftie x l r) ctx) = Zipper r (LRC x l ctx)
 right (Zipper (Balanced x l r) ctx) = Zipper r (BC False x l ctx)
@@ -120,19 +116,12 @@ isRight :: Zipper m a -> Bool
 isRight = (&&) <$> canGoUp <*> (not . isLeft)
 
 zipTo :: Ord a => a -> Zipper m a -> Zipper m a
-zipTo x z@(Zipper (Balanced v l r) ctx) = case compare x v of
-                                  EQ -> z
-                                  LT -> zipTo x $ Zipper l (BC True v r ctx)
-                                  GT -> zipTo x $ Zipper r (BC False v l ctx)
-zipTo x z@(Zipper (Leftie v l r) ctx) = case compare x v of
-                                  EQ -> z
-                                  LT -> zipTo x $ Zipper l (LLC v r ctx)
-                                  GT -> zipTo x $ Zipper r (LRC v l ctx)
-zipTo x z@(Zipper (Rightie v l r) ctx) = case compare x v of
-                                  EQ -> z
-                                  LT -> zipTo x $ Zipper l (RLC v r ctx)
-                                  GT -> zipTo x $ Zipper r (RRC v l ctx)
-zipTo x z = z
+zipTo x z@(Zipper Nil _) = z
+zipTo x z = let v = value z
+            in case compare x v of
+                 EQ -> z
+                 LT -> zipTo x $ left z
+                 GT -> zipTo x $ right z
 
 insertUnbalancedAt :: forall m a n. AVLNode (Succ n) a -> Context m n a -> AVLTree a
 insertUnbalancedAt t (LRC v y ctx) = T . zipUp $ Zipper (Balanced v y t) ctx
