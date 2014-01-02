@@ -1,4 +1,9 @@
-{-# LANGUAGE GADTs, ScopedTypeVariables, FlexibleInstances, DataKinds, ExplicitForAll, InstanceSigs, StandaloneDeriving, KindSignatures #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE KindSignatures #-}
 
 data Nat = Zero | Succ Nat deriving (Eq, Ord, Show)
 type One = Succ Zero
@@ -120,7 +125,6 @@ insertUnbalancedAt (Rightie b g p) (BC False a d ctx) = goUp
     goUp = insertUnbalancedAt (Leftie b (Leftie a d g) p) ctx
 insertUnbalancedAt t (BC False a d ctx) = insertUnbalancedAt (Rightie a d t) ctx
 insertUnbalancedAt t (BC True a d ctx) = insertUnbalancedAt (Leftie a t d) ctx
-
 
 
 main :: IO ()
