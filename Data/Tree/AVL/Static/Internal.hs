@@ -12,6 +12,7 @@ module Data.Tree.AVL.Static.Internal (
   unZip,
   value,
   zipTo,
+  zipToSmallest,
   zipToPredecessor,
   zipToSuccessor,
   Zipper(Zipper)
@@ -156,18 +157,18 @@ insertUnbalancedAt (Balanced b g p) (LLC a d ctx) = goUp
     goUp = insertUnbalancedAt (Rightie b g (Leftie a p d)) ctx
 
 {- RRC -}
-insertUnbalancedAt (Rightie b p g) (RRC a d ctx) = T $ zipUp z
+insertUnbalancedAt (Rightie b g p) (RRC a d ctx) = T $ zipUp z
   where
-    z = Zipper (Balanced b g (Balanced a p d)) ctx
-insertUnbalancedAt (Leftie b (Leftie p t1 t2) g) (RRC a d ctx) = T $ zipUp z
+    z = Zipper (Balanced b (Balanced a d g) p) ctx
+insertUnbalancedAt (Leftie b (Leftie g t1 t2) p) (RRC a d ctx) = T $ zipUp z
   where
-    z = Zipper (Balanced p (Leftie b g t2) (Balanced a t1 d)) ctx
-insertUnbalancedAt (Leftie b (Rightie p t1 t2) g) (RRC a d ctx) = T $ zipUp z
+    z = Zipper (Balanced g (Balanced a d t1) (Rightie b t2 p)) ctx
+insertUnbalancedAt (Leftie b (Rightie g t1 t2) p) (RRC a d ctx) = T $ zipUp z
   where
-    z = Zipper (Balanced p (Balanced b g t2) (Rightie a t1 d)) ctx
-insertUnbalancedAt (Leftie b (Balanced p t1 t2) g) (RRC a d ctx) = T $ zipUp z
+    z = Zipper (Balanced g (Leftie a d t1) (Balanced b t2 p)) ctx
+insertUnbalancedAt (Leftie b (Balanced g t1 t2) p) (RRC a d ctx) = T $ zipUp z
   where
-    z = Zipper (Balanced p (Balanced b g t2) (Balanced a t1 d)) ctx
+    z = Zipper (Balanced g (Balanced a d t1) (Balanced b t2 p)) ctx
 insertUnbalancedAt (Balanced b p g) (RRC a d ctx) = goUp
   where
     goUp = insertUnbalancedAt (Leftie b (Rightie a d p) g) ctx

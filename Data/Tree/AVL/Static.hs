@@ -7,6 +7,7 @@ module Data.Tree.AVL.Static (
   search,
   predecessor,
   successor,
+  toList,
   Iterator
 ) where
 
@@ -40,3 +41,13 @@ successor x t = do
                   Iterator z <- search x t
                   p <- zipToSuccessor z
                   return $ Iterator p
+
+toList :: Ord a => AVLTree a -> [a]
+toList (T Nil) = []
+toList (T root) = let z = unZip root
+                      first = zipToSmallest z
+                  in go first
+  where
+    go z = let next = zipToSuccessor z
+               v = value z
+           in maybe [v] (\z' -> v:go z') next
