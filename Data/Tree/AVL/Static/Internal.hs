@@ -19,7 +19,6 @@ module Data.Tree.AVL.Static.Internal (
 ) where
 
 import Control.Applicative ((<$>), (<*>))
-import Data.Maybe (Maybe(..))
 
 data Nat = Zero | Succ Nat deriving (Eq, Ord, Show)
 
@@ -116,7 +115,7 @@ isRight :: Zipper m a -> Bool
 isRight = (&&) <$> canGoUp <*> (not . isLeft)
 
 zipTo :: Ord a => a -> Zipper m a -> Zipper m a
-zipTo x z@(Zipper Nil _) = z
+zipTo _ z@(Zipper Nil _) = z
 zipTo x z = let v = value z
             in case compare x v of
                  EQ -> z
