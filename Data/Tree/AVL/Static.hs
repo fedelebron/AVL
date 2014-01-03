@@ -3,6 +3,8 @@
 module Data.Tree.AVL.Static (
   AVLTree,
   empty,
+  delete,
+  get,
   insert,
   search,
   predecessor,
@@ -51,3 +53,8 @@ toList (T root) = let z = unZip root
     go z = let next = zipToSuccessor z
                v = value z
            in maybe [v] (\z' -> v:go z') next
+
+delete :: Ord a => a -> AVLTree a -> AVLTree a
+delete x t@(T root) = case zipTo x $ unZip root of
+  Zipper Nil _ -> t
+  z -> deleteBST z

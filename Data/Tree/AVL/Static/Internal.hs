@@ -4,11 +4,13 @@
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Data.Tree.AVL.Static.Internal (
   AVLNode(..),
   AVLTree(T),
   insertUnbalancedAt,
+  deleteBST,
   unZip,
   value,
   zipTo,
@@ -114,6 +116,9 @@ isLeft _ = True
 isRight :: Zipper m a -> Bool
 isRight = (&&) <$> canGoUp <*> (not . isLeft)
 
+isLeaf :: Zipper m a -> Bool
+isLeaf = (&&) <$> (not . canGoLeft) <*> (not . canGoRight)
+
 zipTo :: Ord a => a -> Zipper m a -> Zipper m a
 zipTo _ z@(Zipper Nil _) = z
 zipTo x z = let v = value z
@@ -197,3 +202,63 @@ zipToFirstRightChild :: Zipper m a -> Maybe (Zipper m a)
 zipToFirstRightChild z | isRight z = Just z
 zipToFirstRightChild z | canGoUp z = zipToFirstRightChild (up z)
                        | otherwise = Nothing
+
+fixContext :: forall m a n. Eq a => Context m n a -> a -> a -> Context m n a
+fixContext ctx k k' = go ctx
+  where
+    z x = if x == k then k' else x
+    go :: Context m' n' a -> Context m' n' a
+    go Root = Root
+    go (BC goLeft x y ctx) = BC goLeft (z x) y (go ctx)
+    go (LLC x y ctx) = LLC (z x) y (go ctx)
+    go (LRC x y ctx) = LRC (z x) y (go ctx)
+    go (RRC x y ctx) = RRC (z x) y (go ctx)
+    go (RLC x y ctx) = RLC (z x) y (go ctx)
+
+deleteBST :: Eq a => Zipper m a -> AVLTree a
+deleteBST (Zipper (Balanced _ Nil Nil) ctx) = rebalance Nil ctx
+deleteBST (Zipper (Rightie _ Nil r) ctx) = rebalance r ctx
+deleteBST (Zipper (Leftie _ l Nil) ctx) = rebalance l ctx
+deleteBST z@(Zipper (Rightie k _ r) ctx) =
+  let Just s = zipToSuccessor (right z)
+  in case s of
+       Zipper (Balanced k' Nil Nil) ctx' -> rebalance Nil (fixContext ctx' k k')
+       Zipper (Rightie k' Nil r) ctx' -> rebalance r (fixContext ctx' k k')
+       _ -> error "The impossible has happened, bad successor found."
+deleteBST z@(Zipper (Leftie k l _) ctx) =
+  let Just s = zipToPredecessor (left z)
+  in case s of
+       Zipper (Balanced k' Nil Nil) ctx' -> rebalance Nil (fixContext ctx' k k')
+       Zipper (Leftie k' l Nil) ctx' -> rebalance l (fixContext ctx' k k')
+       _ -> error "The impossible has happened, bad predecessor found."
+
+rebalance :: forall m a n. AVLNode n a -> Context m (Succ n) a -> AVLTree a
+rebalance t Root = T t
+rebalance t (BC True a d ctx) = T . zipUp $ Zipper (Rightie a t d) ctx
+rebalance t (BC False a d ctx) = T . zipUp $ Zipper (Leftie a d t) ctx
+rebalance t (LLC a d ctx) = rebalance (Balanced a t d) ctx
+rebalance t (RRC a d ctx) = rebalance (Balanced a d t) ctx
+rebalance t (RLC a (Balanced d t1 t2) ctx) = T . zipUp $ z
+  where
+    z = Zipper (Leftie d (Rightie a t t1) t2) ctx
+rebalance t (RLC a (Rightie d t1 t2) ctx) = rebalance z ctx
+  where
+    z = Balanced d (Balanced a t t1) t2
+rebalance t (RLC a (Leftie d q t2) ctx) = rebalance z ctx
+  where
+    z = case q of
+          Leftie t1 p1 p2 -> Balanced t1 (Balanced a t p1) (Rightie d p2 t2)
+          Rightie t1 p1 p2 ->  Balanced t1 (Leftie a t p1) (Balanced d p2 t2)
+          Balanced t1 p1 p2 -> Balanced t1 (Balanced a t p1) (Balanced d p2 t2)
+rebalance t (LRC a (Balanced d t1 t2) ctx) = T . zipUp $ z
+  where
+    z = Zipper (Rightie d t1 (Leftie a t2 t)) ctx
+rebalance t (LRC a (Leftie d t1 t2) ctx) = rebalance z ctx
+  where
+    z = Balanced d t1 (Balanced a t2 t)
+rebalance t (LRC a (Rightie d t1 q) ctx) = rebalance z ctx
+  where
+    z = case q of
+         Leftie t2 p1 p2 -> Balanced t2 (Balanced d t1 p1) (Rightie a p2 t)
+         Rightie t2 p1 p2 -> Balanced t2 (Leftie d t1 p1) (Balanced a p2 t)
+         Balanced t2 p1 p2 -> Balanced t2 (Balanced d t1 p1) (Balanced a p2 t)
