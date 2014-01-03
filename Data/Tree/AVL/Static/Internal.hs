@@ -199,8 +199,8 @@ zipToFirstRightChild z | isRight z = Just z
 zipToFirstRightChild z | canGoUp z = zipToFirstRightChild (up z)
                        | otherwise = Nothing
 
-fixContext :: forall m a n. Eq a => Context m n a -> a -> a -> Context m n a
-fixContext ctx k k' = go ctx
+fixContext :: forall m a n. Eq a => a -> a -> Context m n a -> Context m n a
+fixContext k k' = go
   where
     z x = if x == k then k' else x
     go :: Context m' n' a -> Context m' n' a
@@ -215,17 +215,17 @@ deleteBST :: Eq a => Zipper m a -> AVLTree a
 deleteBST (Zipper (Balanced _ Nil Nil) ctx) = rebalance Nil ctx
 deleteBST (Zipper (Rightie _ Nil r) ctx) = rebalance r ctx
 deleteBST (Zipper (Leftie _ l Nil) ctx) = rebalance l ctx
-deleteBST z@(Zipper (Rightie k _ r) ctx) =
+deleteBST z@(Zipper (Rightie k _ _) _) =
   let Just s = zipToSuccessor (right z)
   in case s of
-       Zipper (Balanced k' Nil Nil) ctx' -> rebalance Nil (fixContext ctx' k k')
-       Zipper (Rightie k' Nil r) ctx' -> rebalance r (fixContext ctx' k k')
+       Zipper (Balanced k' Nil Nil) ctx' -> rebalance Nil (fixContext k k' ctx')
+       Zipper (Rightie k' Nil r) ctx' -> rebalance r (fixContext k k' ctx')
        _ -> error "The impossible has happened, bad successor found."
-deleteBST z@(Zipper (Leftie k l _) ctx) =
+deleteBST z@(Zipper (Leftie k _ _) _) =
   let Just s = zipToPredecessor (left z)
   in case s of
-       Zipper (Balanced k' Nil Nil) ctx' -> rebalance Nil (fixContext ctx' k k')
-       Zipper (Leftie k' l Nil) ctx' -> rebalance l (fixContext ctx' k k')
+       Zipper (Balanced k' Nil Nil) ctx' -> rebalance Nil (fixContext k k' ctx')
+       Zipper (Leftie k' l Nil) ctx' -> rebalance l (fixContext k k' ctx')
        _ -> error "The impossible has happened, bad predecessor found."
 
 rebalance :: forall m a n. AVLNode n a -> Context m (Succ n) a -> AVLTree a
