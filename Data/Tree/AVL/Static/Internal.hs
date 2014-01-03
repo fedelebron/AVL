@@ -20,7 +20,12 @@ module Data.Tree.AVL.Static.Internal (
   Zipper(Zipper)
 ) where
 
-import Control.Applicative ((<$>), (<*>))
+import Prelude hiding (fmap)
+import Control.Applicative (Applicative, pure, (<$>), (<*>))
+import Data.Functor (Functor, fmap)
+import Data.Traversable (Traversable, traverse)
+import Data.Monoid (Monoid, mempty, (<>))
+import Data.Foldable (Foldable, foldMap)
 
 data Nat = Zero | Succ Nat deriving (Eq, Ord, Show)
 
@@ -34,6 +39,39 @@ deriving instance Show a => Show (AVLNode n a)
 
 data AVLTree a = forall n. T (AVLNode n a)
 deriving instance Show a => Show (AVLTree a)
+
+foldNode :: (b -> b -> a -> b) -> b -> AVLNode n a -> b
+foldNode _ e Nil = e
+foldNode f e (Balanced x l r) = f (foldNode f e l) (foldNode f e r) x
+foldNode f e (Rightie x l r) = f (foldNode f e l) (foldNode f e r) x
+foldNode f e (Leftie x l r) = f (foldNode f e l) (foldNode f e r) x
+
+{- Note, this isn't actually a Functor, since we require f monotonic. -}
+fmapNode :: (a -> b) -> AVLNode n a -> AVLNode n b
+fmapNode _ Nil = Nil
+fmapNode f (Balanced x l r) = Balanced (f x) (fmapNode f l) (fmapNode f r)
+fmapNode f (Rightie x l r) = Rightie (f x) (fmapNode f l) (fmapNode f r)
+fmapNode f (Leftie x l r) = Leftie (f x) (fmapNode f l) (fmapNode f r)
+
+traverseNode :: Applicative f => (a -> f b) -> AVLNode n a -> f (AVLNode n b)
+traverseNode _ Nil = pure Nil
+traverseNode f (Balanced x l r) = flip Balanced <$> traverseNode f l
+                                                <*> f x
+                                                <*> traverseNode f r
+traverseNode f (Rightie x l r) = flip Rightie <$> traverseNode f l
+                                              <*> f x
+                                              <*> traverseNode f r
+traverseNode f (Leftie x l r) = flip Leftie <$> traverseNode f l
+                                            <*> f x
+                                            <*> traverseNode f r
+instance Functor AVLTree where
+  fmap f (T k) = T (fmapNode f k)
+
+instance Foldable AVLTree where
+  foldMap f (T r) = foldNode (\x y z -> x <> z <> y) mempty (fmapNode f r)
+
+instance Traversable AVLTree where
+  traverse f (T r) = T <$> traverseNode f r
 
 {- Context for a Zipper.
  - BC = Balanced Context,
