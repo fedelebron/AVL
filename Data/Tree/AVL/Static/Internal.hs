@@ -127,7 +127,7 @@ zipTo x z = let v = value z
                  LT -> zipTo x $ left z
                  GT -> zipTo x $ right z
 
-insertUnbalancedAt :: forall m a n. AVLNode (Succ n) a -> Context m n a -> AVLTree a
+insertUnbalancedAt :: AVLNode (Succ n) a -> Context m n a -> AVLTree a
 insertUnbalancedAt t (LRC v y ctx) = T . zipUp $ Zipper (Balanced v y t) ctx
 insertUnbalancedAt t (RLC v y ctx) = T . zipUp $ Zipper (Balanced v t y) ctx
 insertUnbalancedAt t Root = T t
@@ -136,15 +136,13 @@ insertUnbalancedAt t Root = T t
 insertUnbalancedAt (Leftie b g p) (LLC a d ctx) = T $ zipUp z
   where
     z = Zipper (Balanced b g (Balanced a p d)) ctx
-insertUnbalancedAt (Rightie b g (Rightie p t1 t2)) (LLC a d ctx) = T $ zipUp z
+insertUnbalancedAt (Rightie b g q) (LLC a d ctx) = T $ zipUp z
   where
-    z = Zipper (Balanced p (Leftie b g t1) (Balanced a t2 d)) ctx
-insertUnbalancedAt (Rightie b g (Leftie p t1 t2)) (LLC a d ctx) = T $ zipUp z
-  where
-    z = Zipper (Balanced p (Balanced b g t1) (Rightie a t2 d)) ctx
-insertUnbalancedAt (Rightie b g (Balanced p t1 t2)) (LLC a d ctx) = T $ zipUp z
-  where
-    z = Zipper (Balanced p (Balanced b g t1) (Balanced a t2 d)) ctx
+    z = Zipper t ctx
+    t = case q of
+          Rightie p t1 t2 -> Balanced p (Leftie b g t1) (Balanced a t2 d)
+          Leftie p t1 t2 -> Balanced p (Balanced b g t1) (Rightie a t2 d)
+          Balanced p t1 t2 -> Balanced p (Balanced b g t1) (Balanced a t2 d)
 insertUnbalancedAt (Balanced b g p) (LLC a d ctx) = goUp
   where
     goUp = insertUnbalancedAt (Rightie b g (Leftie a p d)) ctx
@@ -153,15 +151,13 @@ insertUnbalancedAt (Balanced b g p) (LLC a d ctx) = goUp
 insertUnbalancedAt (Rightie b g p) (RRC a d ctx) = T $ zipUp z
   where
     z = Zipper (Balanced b (Balanced a d g) p) ctx
-insertUnbalancedAt (Leftie b (Leftie g t1 t2) p) (RRC a d ctx) = T $ zipUp z
+insertUnbalancedAt (Leftie b q p) (RRC a d ctx) = T $ zipUp z
   where
-    z = Zipper (Balanced g (Balanced a d t1) (Rightie b t2 p)) ctx
-insertUnbalancedAt (Leftie b (Rightie g t1 t2) p) (RRC a d ctx) = T $ zipUp z
-  where
-    z = Zipper (Balanced g (Leftie a d t1) (Balanced b t2 p)) ctx
-insertUnbalancedAt (Leftie b (Balanced g t1 t2) p) (RRC a d ctx) = T $ zipUp z
-  where
-    z = Zipper (Balanced g (Balanced a d t1) (Balanced b t2 p)) ctx
+    z = Zipper t ctx
+    t = case q of
+          Leftie g t1 t2 -> Balanced g (Balanced a d t1) (Rightie b t2 p)
+          Rightie g t1 t2 -> Balanced g (Leftie a d t1) (Balanced b t2 p)
+          Balanced g t1 t2 -> Balanced g (Balanced a d t1) (Balanced b t2 p)
 insertUnbalancedAt (Balanced b p g) (RRC a d ctx) = goUp
   where
     goUp = insertUnbalancedAt (Leftie b (Rightie a d p) g) ctx
