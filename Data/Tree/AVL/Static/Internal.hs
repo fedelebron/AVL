@@ -227,6 +227,13 @@ deleteBST z@(Zipper (Leftie k _ _) _) =
        Zipper (Balanced k' Nil Nil) ctx' -> rebalance Nil (fixContext k k' ctx')
        Zipper (Leftie k' l Nil) ctx' -> rebalance l (fixContext k k' ctx')
        _ -> error "The impossible has happened, bad predecessor found."
+deleteBST z@(Zipper (Balanced k _ _) _) =
+  let Just s = zipToSuccessor (right z)
+  in case s of
+       Zipper (Balanced k' Nil Nil) ctx' -> rebalance Nil (fixContext k k' ctx')
+       Zipper (Rightie k' Nil r) ctx' -> rebalance r (fixContext k k' ctx')
+       _ -> error "The impossible has happened, bad successor found."
+deleteBST (Zipper Nil _) = error "You cannot delete Nil."
 
 rebalance :: forall m a n. AVLNode n a -> Context m (Succ n) a -> AVLTree a
 rebalance t Root = T t
