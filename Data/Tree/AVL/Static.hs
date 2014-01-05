@@ -2,15 +2,15 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module Data.Tree.AVL.Static (
   AVLTree,
+  Zipper,
   empty,
   size,
-  delete,
-  value,
   insert,
   search,
+  delete,
+  value,
   predecessor,
   successor,
-  Zipper
 ) where
 
 import Data.Tree.AVL.Static.Internal
