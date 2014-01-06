@@ -265,7 +265,7 @@ zipToSuccessor z | canGoRight z = Just . zipToSmallest $ right z
 -- |Given a 'Zipper' to a node in the tree, returns a Zipper to the predecessor
 -- of this node. If no such predecessor exists, returns 'Nothing'.
 zipToPredecessor :: Zipper a -> Maybe (Zipper a)
-zipToPredecessor z | canGoLeft z = Just . zipToSmallest $ left z
+zipToPredecessor z | canGoLeft z = Just . zipToGreatest $ left z
                    | otherwise = let parent = zipToFirstRightChild z
                                  in up <$> parent
 -- |Given a 'Zipper' to a node @X@ in the tree, returns a 'Zipper' to the
@@ -317,19 +317,19 @@ deleteBST (Zipper (Balanced _ Nil Nil) ctx) = rebalance Nil ctx
 deleteBST (Zipper (Rightie _ Nil r) ctx) = rebalance r ctx
 deleteBST (Zipper (Leftie _ l Nil) ctx) = rebalance l ctx
 deleteBST z@(Zipper (Rightie k _ _) _) =
-  let Just s = zipToSuccessor (right z)
+  let Just s = zipToSuccessor z
   in case s of
        Zipper (Balanced k' Nil Nil) ctx' -> rebalance Nil (fixContext k k' ctx')
        Zipper (Rightie k' Nil r) ctx' -> rebalance r (fixContext k k' ctx')
        _ -> error "The impossible has happened, bad successor found."
 deleteBST z@(Zipper (Leftie k _ _) _) =
-  let Just s = zipToPredecessor (left z)
+  let Just s = zipToPredecessor z
   in case s of
        Zipper (Balanced k' Nil Nil) ctx' -> rebalance Nil (fixContext k k' ctx')
        Zipper (Leftie k' l Nil) ctx' -> rebalance l (fixContext k k' ctx')
        _ -> error "The impossible has happened, bad predecessor found."
 deleteBST z@(Zipper (Balanced k _ _) _) =
-  let Just s = zipToSuccessor (right z)
+  let Just s = zipToSuccessor z
   in case s of
        Zipper (Balanced k' Nil Nil) ctx' -> rebalance Nil (fixContext k k' ctx')
        Zipper (Rightie k' Nil r) ctx' -> rebalance r (fixContext k k' ctx')
