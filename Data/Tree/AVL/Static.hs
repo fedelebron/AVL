@@ -48,14 +48,14 @@ search x t = case zipTo x (unZip t) of
   z -> Just z
 
 -- |Returns a 'Zipper' to the predecessor of a value in a tree. If the input
--- 'Zipper' points to the smallest element in the tree, returns Nothing.
+-- 'Zipper' points to the smallest element in the tree, returns 'Nothing'.
 --
 -- /O(log n)/.
 predecessor :: Ord a => Zipper a -> Maybe (Zipper a)
 predecessor = zipToPredecessor
 
 -- |Returns a 'Zipper' to the successor of a value in a tree. If the input
--- 'Zipper' points to the greatest element in the tree, returns Nothing.
+-- 'Zipper' points to the greatest element in the tree, returns 'Nothing'.
 --
 -- /O(log n)/.
 successor :: Ord a => Zipper a -> Maybe (Zipper a)
@@ -70,7 +70,7 @@ delete x t = case zipTo x (unZip t) of
   Zipper Nil _ -> t
   z -> deleteBST z
 
--- |Returns a 'Zipper' to the smallest element in the tree, or Nothing if the
+-- |Returns a 'Zipper' to the smallest element in the tree, or 'Nothing' if the
 -- tree is empty.
 --
 -- /O(log n)/.
@@ -78,7 +78,7 @@ begin :: AVLTree a -> Maybe (Zipper a)
 begin t | size t == 0 = Nothing
         | otherwise = Just . zipToSmallest . unZip $ t
 
--- |Returns a 'Zipper' to the greatest element in the tree, or Nothinf if the
+-- |Returns a 'Zipper' to the greatest element in the tree, or 'Nothing' if the
 -- tree is empty.
 --
 -- /O(log n)/.
