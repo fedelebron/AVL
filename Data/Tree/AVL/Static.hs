@@ -1,5 +1,4 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE ExistentialQuantification #-}
 module Data.Tree.AVL.Static (
   AVLTree,
   Zipper,
