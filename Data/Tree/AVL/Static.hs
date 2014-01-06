@@ -8,6 +8,8 @@ module Data.Tree.AVL.Static (
   search,
   delete,
   value,
+  begin,
+  end,
   predecessor,
   successor,
 ) where
@@ -45,21 +47,19 @@ search x t = case zipTo x (unZip t) of
   Zipper Nil _ -> Nothing
   z -> Just z
 
--- |Returns a 'Zipper' to the predecessor of a value in a tree.
--- Note the value needs to exist in the tree. If the value does not exist in
--- the tree, or it has no predecessor, returns 'Nothing'.
+-- |Returns a 'Zipper' to the predecessor of a value in a tree. If the input
+-- 'Zipper' points to the smallest element in the tree, returns Nothing.
 --
 -- /O(log n)/.
-predecessor :: Ord a => a -> AVLTree a -> Maybe (Zipper a)
-predecessor x t = search x t >>= zipToPredecessor
+predecessor :: Ord a => Zipper a -> Maybe (Zipper a)
+predecessor = zipToPredecessor
 
--- |Returns a 'Zipper' to the successor of a value in a tree.
--- Note the value needs to exist in the tree. If the value does not exist in
--- the tree, or it has no successor, returns 'Nothing'.
+-- |Returns a 'Zipper' to the successor of a value in a tree. If the input
+-- 'Zipper' points to the greatest element in the tree, returns Nothing.
 --
 -- /O(log n)/.
-successor :: Ord a => a -> AVLTree a -> Maybe (Zipper a)
-successor x t = search x t >>= zipToSuccessor
+successor :: Ord a => Zipper a -> Maybe (Zipper a)
+successor = zipToSuccessor
 
 -- |Deletes a value from an 'AVLTree'. If the value does not exist in the tree,
 -- does nothing.
@@ -69,3 +69,19 @@ delete :: Ord a => a -> AVLTree a -> AVLTree a
 delete x t = case zipTo x (unZip t) of
   Zipper Nil _ -> t
   z -> deleteBST z
+
+-- |Returns a 'Zipper' to the smallest element in the tree, or Nothing if the
+-- tree is empty.
+--
+-- /O(log n)/.
+begin :: AVLTree a -> Maybe (Zipper a)
+begin t | size t == 0 = Nothing
+        | otherwise = Just . zipToSmallest . unZip $ t
+
+-- |Returns a 'Zipper' to the greatest element in the tree, or Nothinf if the
+-- tree is empty.
+--
+-- /O(log n)/.
+end :: AVLTree a -> Maybe (Zipper a)
+end t | size t == 0 = Nothing
+      | otherwise = Just . zipToGreatest . unZip $ t
