@@ -70,7 +70,7 @@ instance Foldable AVLTree where
   -- >>> [1,2,3,4,5,6,7,8,9,10]
   -- >>> foldr (+) 0 t
   -- >>> 55
-foldMap f (T r _) = foldNode (\x y z -> x <> z <> y) mempty (fmapNode f r)
+  foldMap f (T r _) = foldNode (\x y z -> x <> z <> y) mempty (fmapNode f r)
 
 instance Traversable AVLTree where
   -- |Traversable instance for AVLNodes. This is an in-order traversal of the
