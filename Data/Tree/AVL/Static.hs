@@ -76,7 +76,7 @@ delete x t = case zipTo x (unZip t) of
 -- /O(log n)/.
 begin :: AVLTree a -> Maybe (Zipper a)
 begin t | size t == 0 = Nothing
-        | otherwise = Just . zipToSmallest . unZip $ t
+        | otherwise = Just . zipToSmallest . unZip $ t
 
 -- |Returns a 'Zipper' to the greatest element in the tree, or 'Nothing' if the
 -- tree is empty.
