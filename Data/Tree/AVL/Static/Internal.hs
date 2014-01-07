@@ -341,7 +341,7 @@ deleteBST (Zipper Nil _) = error "You cannot delete Nil."
 -- Since this cannot be done normally, it uses rotations to return an 'AVLTree'
 -- that has the same elements as the 'Context' and the 'AVLNode' together,
 -- but may have a different structure than the tree the 'Context' represented.
-rebalance :: forall a n. AVLNode n a -> Context (Succ n) a -> AVLTree a
+rebalance :: AVLNode n a -> Context (Succ n) a -> AVLTree a
 rebalance t (Root k) = (T t (k - 1))
 rebalance t (BC True a d ctx) = zipUp (subtract 1) $ Zipper (Rightie a t d) ctx
 rebalance t (BC False a d ctx) = zipUp (subtract 1) $ Zipper (Leftie a d t) ctx
